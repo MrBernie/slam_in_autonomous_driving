@@ -50,14 +50,26 @@ cd to the workspace folder (in `\root\workspace`). Clone the source code into th
 ```bash
 git clone https://github.com/MrBernie/slam_in_autonomous_driving_bernie
 ```
-Now install the Pangolin thirdparty denpendencies:
+Now install the Pangolin thirdparty dependencies:
 ```bash
 cd slam_in_autonomous_driving_bernie/thirdparty
 unzip Pangolin.zip
 cd Pangolin
 mkdir build
-cmkae ..
-cmake -j 8 #The number depends on your CPU core number
+cd build
+cmake ..
+make -j 8 #The number depends on your CPU core number
+```
+
+Now install the g2o thirdparty dependencies:
+cd to the `/workspace` first.
+```bash
+cd slam_in_autonomous_driving_bernie/thirdparty
+cd g2o
+mkdir build
+cd build
+cmake ..
+make -j 8
 ```
 
 
