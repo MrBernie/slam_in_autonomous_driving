@@ -42,7 +42,7 @@ Or, you can enter your container using terminal by:
 docker exec -it slam_workspace-1 /bin/bash
 ```
 
-# SourceCode Dependencies Installation: 
+# Source Code Dependencies Installation: 
 
 Now enter the cotainer either using VNC or by shell.
 
@@ -70,6 +70,14 @@ mkdir build
 cd build
 cmake ..
 make -j 8
+```
+
+# Source Code Compiling:
+cd to the `/workspace` first.
+```bash
+cd slam_in_autonomous_driving
+mkdir build
+cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 
 
