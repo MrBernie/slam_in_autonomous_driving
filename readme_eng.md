@@ -1,4 +1,4 @@
-# Docker installation
+# Docker Environment
 
 Install the docker engine: https://docs.docker.com/engine/install/ubuntu/#install-from-a-package.
 
@@ -32,10 +32,10 @@ Remember to create the folder `workspace` to keep the source code.
 
 Run:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-Now, you can visit the VNC by inputing `localhost:46080` in your browser.
+Now, you can visit the VNC by inputing `localhost:46080`, and click `vnc.html` in your browser.
 
 Or, you can enter your container using terminal by:
 ```bash
