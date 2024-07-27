@@ -70,7 +70,7 @@ cmake .
 make -j
 ```
 
-# Source Code Compiling:
+# Source Code Compiling and Running:
 cd to the `/workspace` first.
 ```bash
 cd slam_in_autonomous_driving
