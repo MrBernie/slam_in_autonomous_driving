@@ -80,8 +80,14 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 Now you can compile the project you need.
 For example, compiling the `motion.cc` in chapter 2.
-cd to the `/slam_in_autonomous_driving/bin`
-run
+
+cd to the `/slam_in_autonomous_driving/build` and run
+```bash
+make motion
+```
+
+To run the project.
+cd to the `/slam_in_autonomous_driving/bin` and run
 ```bash
 ./motion
 ```
