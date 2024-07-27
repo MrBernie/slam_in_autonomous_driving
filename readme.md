@@ -58,7 +58,7 @@ cd Pangolin
 mkdir build
 cd build
 cmake ..
-make -j 8 #The number depends on your CPU core number
+make -j
 ```
 
 Now install the g2o thirdparty dependencies:
@@ -66,10 +66,8 @@ cd to the `/workspace` first.
 ```bash
 cd slam_in_autonomous_driving/thirdparty
 cd g2o
-mkdir build
-cd build
-cmake ..
-make -j 8
+cmake .
+make -j
 ```
 
 # Source Code Compiling:
@@ -80,6 +78,14 @@ mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
+Now you can compile the project you need.
+For example, compiling the `motion.cc` in chapter 2.
+cd to the `/slam_in_autonomous_driving/bin`
+run
+```bash
+./motion
+```
+
 
 
 
