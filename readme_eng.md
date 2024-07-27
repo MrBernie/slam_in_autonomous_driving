@@ -7,6 +7,7 @@ Remember to add the user to Docker Group: https://docs.docker.com/engine/install
 Pull the docker image: 
 ```bash
 docker pull zijiechenrobotic/sad-workspace:latest
+```
 
 Create a `docker-compose.yml` file, entering:
 ```
