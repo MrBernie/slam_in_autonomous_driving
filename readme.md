@@ -44,7 +44,7 @@ docker exec -it slam_workspace-1 /bin/bash
 
 # Source Code Dependencies Installation: 
 
-Now enter the cotainer either using VNC or by shell.
+Now enter the cotainer either using VNC or by terminal.
 
 cd to the workspace folder (in `\root\workspace`). Clone the source code into the workspace folder:
 ```bash
