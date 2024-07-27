@@ -55,5 +55,4 @@ data/ch3/gins.txt
 data/ch3/gnss_output.txt
 data/ch4/gins_preintg.txt
 
-/thirdparty/
-thirdparty/g2o/Makefile
+thirdparty/

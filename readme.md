@@ -88,9 +88,9 @@ make motion
 
 To run the project. (Some project must be run in the VNC due to graphic UI requirements)
 
-cd to the `/slam_in_autonomous_driving/bin` and run
+cd to the `/slam_in_autonomous_driving` and run
 ```bash
-./motion
+./bin/motion
 ```
 
 
