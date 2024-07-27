@@ -15,6 +15,7 @@ version: '3.4'
 services:
   sad-workspace:
     image: zijiechenrobotic/sad-workspace:latest
+    container_name: slam_workspace-1
     environment:
       - VNC_PW=abc123 # VNC password
       - VNC_GEOMETRY=1920x1080 # VNC resolution
@@ -30,8 +31,22 @@ services:
 Remember to create the folder `workspace` to keep the source code.
 
 Run:
-```docker-compose up -d```
+```bash
+docker-compose up -d
+```
 
-# Installation:
+Now, you can visit the VNC by inputing `localhost:46080` in your browser.
 
-```git clone https://github.com/MrBernie/slam_in_autonomous_driving```
+Or, you can enter your container using terminal by:
+```bash
+docker exec -it slam_workspace-1 /bin/bash
+```
+
+# Installation: 
+
+cd to the workspace folder. Clone the source code into the workspace folder.
+```bash
+git clone https://github.com/MrBernie/slam_in_autonomous_driving
+```
+
+
