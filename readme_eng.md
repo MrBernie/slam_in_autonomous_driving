@@ -32,7 +32,7 @@ Remember to create the folder `workspace` to keep the source code.
 
 Run:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Now, you can visit the VNC by inputing `localhost:46080` in your browser.
