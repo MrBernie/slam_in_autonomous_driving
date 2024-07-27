@@ -42,11 +42,23 @@ Or, you can enter your container using terminal by:
 docker exec -it slam_workspace-1 /bin/bash
 ```
 
-# Installation: 
+# SourceCode Dependencies Installation: 
 
-cd to the workspace folder. Clone the source code into the workspace folder.
+Now enter the cotainer either using VNC or by shell.
+
+cd to the workspace folder (in `\root\workspace`). Clone the source code into the workspace folder:
 ```bash
-git clone https://github.com/MrBernie/slam_in_autonomous_driving
+git clone https://github.com/MrBernie/slam_in_autonomous_driving_bernie
 ```
+Now install the Pangolin thirdparty denpendencies:
+```bash
+cd slam_in_autonomous_driving_bernie/thirdparty
+unzip Pangolin.zip
+cd Pangolin
+mkdir build
+cmkae ..
+cmake -j 8 #The number depends on your CPU core number
+```
+
 
 
