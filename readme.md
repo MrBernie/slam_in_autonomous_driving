@@ -77,6 +77,7 @@ cd to the `/workspace` first.
 ```bash
 cd slam_in_autonomous_driving
 mkdir build
+cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 
