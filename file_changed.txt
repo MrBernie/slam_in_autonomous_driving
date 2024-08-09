@@ -1,0 +1,6 @@
+These are the file changed to implement point cloud + imu navigation
+
+./src/ch3/pcins/**
+./src/common/io_utils.cc
+./src/common/io_utils.h
+./src/common/pc.h

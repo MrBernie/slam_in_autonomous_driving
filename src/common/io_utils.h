@@ -15,6 +15,7 @@
 #include "common/dataset_type.h"
 #include "common/global_flags.h"
 #include "common/gnss.h"
+#include "common/mac.h" //for MAC algorithm
 #include "common/imu.h"
 #include "common/lidar_utils.h"
 #include "common/math_utils.h"
@@ -35,10 +36,11 @@ class TxtIO {
    public:
     TxtIO(const std::string &file_path) : fin(file_path) {}
 
-    /// 定义回调函数
+    /// define the callback function
     using IMUProcessFuncType = std::function<void(const IMU &)>;
     using OdomProcessFuncType = std::function<void(const Odom &)>;
     using GNSSProcessFuncType = std::function<void(const GNSS &)>;
+    using MACProcessFuncType = std::function<void(const MAC &)>;
 
     TxtIO &SetIMUProcessFunc(IMUProcessFuncType imu_proc) {
         imu_proc_ = std::move(imu_proc);
@@ -55,6 +57,11 @@ class TxtIO {
         return *this;
     }
 
+    TxtIO &SetMACProcessFunc(MACProcessFuncType mac_proc) {
+        mac_proc_ = std::move(mac_proc);
+        return *this;
+    }
+
     // 遍历文件内容，调用回调函数
     void Go();
 
@@ -63,6 +70,7 @@ class TxtIO {
     IMUProcessFuncType imu_proc_;
     OdomProcessFuncType odom_proc_;
     GNSSProcessFuncType gnss_proc_;
+    MACProcessFuncType mac_proc_;
 };
 
 /**

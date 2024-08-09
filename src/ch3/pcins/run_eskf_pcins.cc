@@ -11,7 +11,7 @@
 #include <fstream>
 #include <iomanip>
 
-DEFINE_string(txt_path, "./data/ch3/pcins/pcins_in.txt", "data file path");
+DEFINE_string(txt_path, "./data/ch3/macins/macins.txt", "data file path");
 DEFINE_double(antenna_angle, 12.06, "RTK antenna angle）");
 DEFINE_double(antenna_pox_x, -0.17, "RTK antenna offset X");
 DEFINE_double(antenna_pox_y, -0.20, "RTK antenna offset Y");
@@ -19,7 +19,7 @@ DEFINE_bool(with_ui, true, "use UI or not");
 DEFINE_bool(with_odom, false, "use wheel odometry or not");
 
 /**
- * Demonstrate the combination of point cloud (pc) + imu navigation
+ * Demonstrate the combination of point cloud (mac) + imu navigation
  */
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
@@ -54,8 +54,8 @@ int main(int argc, char** argv) {
         fout << std::endl;
     };
 
-    std::ofstream fout("./data/ch3/pcins/pcins_out.txt");
-    bool imu_inited = false, pc_inited = false;
+    std::ofstream fout("./data/ch3/macins/macins_out.txt");
+    bool imu_inited = false, mac_inited = false;
 
     std::shared_ptr<sad::ui::PangolinWindow> ui = nullptr;
     if (FLAGS_with_ui) {
@@ -86,8 +86,8 @@ int main(int argc, char** argv) {
               return;
           }
 
-          if (!gnss_inited) {
-              /// 等待有效的RTK数据
+          if (!mac_inited) {
+              /// wait for the initialization of mac
               return;
           }
 
@@ -134,6 +134,30 @@ int main(int argc, char** argv) {
 
         //     gnss_inited = true;
         // })
+        .SetMACProcessFunc([&](const sad::MAC& mac) {
+            /// PointCloud handling function
+            if (!imu_inited) {
+                return;
+            }
+
+            if (!mac_inited) {
+                // set the initialization point
+                eskf.SetInitialPosition(mac);
+                mac_inited = true;
+                return;
+            }
+
+            // Observe Point Cloud
+            eskf.ObservePointCloud(mac);
+
+            auto state = eskf.GetNominalState();
+            if (ui) {
+                ui->UpdateNavState(state);
+            }
+            save_result(fout, state);
+
+            usleep(1e3);
+        })
         .SetOdomProcessFunc([&](const sad::Odom& odom) {
             /// Odom 处理函数，本章Odom只给初始化使用
             imu_init.AddOdom(odom);

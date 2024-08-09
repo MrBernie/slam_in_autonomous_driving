@@ -9,7 +9,7 @@ namespace sad {
 
 void TxtIO::Go() {
     if (!fin) {
-        LOG(ERROR) << "未能找到文件";
+        LOG(ERROR) << "Cannot locate the file";
         return;
     }
 
@@ -21,7 +21,7 @@ void TxtIO::Go() {
         }
 
         if (line[0] == '#') {
-            // 以#开头的是注释
+            // # start comments
             continue;
         }
 
@@ -45,6 +45,13 @@ void TxtIO::Go() {
             bool heading_valid;
             ss >> time >> lat >> lon >> alt >> heading >> heading_valid;
             gnss_proc_(GNSS(time, 4, Vec3d(lat, lon, alt), heading, heading_valid));
+        } else if (data_type == "MAC" && mac_proc_){
+            double time, transformation_m[16];  // a transformation matrix in one line (output of MAC algorithm)
+            ss >> time;
+            for(int i = 0; i < 16; i++){
+                ss >> transformation_m[i];
+            }
+            mac_proc_(MAC(time, transformation_m));
         }
     }
 
