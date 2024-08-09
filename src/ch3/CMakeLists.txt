@@ -11,6 +11,12 @@ target_link_libraries(run_eskf_gins
         glog gflags ${PROJECT_NAME}.common ${PROJECT_NAME}.ch3
         )
 
+# For the point cloud and imu integration
+add_executable(run_eskf_pcins pcins/run_eskf_pcins.cc)
+target_link_libraries(run_eskf_pcins
+        glog gflags ${PROJECT_NAME}.common ${PROJECT_NAME}.ch3
+        )
+
 add_executable(process_gnss process_gnss.cc)
 target_link_libraries(process_gnss
         glog gflags ${PROJECT_NAME}.common ${PROJECT_NAME}.ch3
