@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
         //     usleep(1e3);
         // })
         .SetOdomProcessFunc([&](const sad::Odom& odom) {
-            /// Odom 处理函数，本章Odom只给初始化使用
+            /// Odom handling, in this Chapter, odometry is only used for IMU initialization
             imu_init.AddOdom(odom);
             if (FLAGS_with_odom && imu_inited && mac_inited) {
                 eskf.ObserveWheelSpeed(odom);

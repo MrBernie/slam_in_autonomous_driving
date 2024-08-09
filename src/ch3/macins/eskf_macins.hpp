@@ -8,6 +8,7 @@
 #include "common/eigen_types.h"
 #include "common/gnss.h"
 #include "common/imu.h"
+#include "common/mac.h" // for MAC input data
 #include "common/math_utils.h"
 #include "common/nav_state.h"
 #include "common/odom.h"
@@ -18,48 +19,47 @@
 namespace sad {
 
 /**
- * 书本第3章介绍的误差卡尔曼滤波器
- * 可以指定观测GNSS的读数，GNSS应该事先转换到车体坐标系
+ * Error-state Kalman Filter
  *
- * 本书使用18维的ESKF，标量类型可以由S指定，默认取double
- * 变量顺序：p, v, R, bg, ba, grav，与书本对应
- * @tparam S    状态变量的精度，取float或double
+ * We use 18-dimensional state vector. Type of varible can be assigned by S (double as default)
+ * Variable order: p, v, R, bg, ba, grav，corresponding to the book
+ * @tparam S    data type of the state vector.
  */
 template <typename S = double>
-class ESKF {
+class ESKF_MACINS {
    public:
     /// 类型定义
-    using SO3 = Sophus::SO3<S>;                     // 旋转变量类型
-    using VecT = Eigen::Matrix<S, 3, 1>;            // 向量类型
-    using Vec18T = Eigen::Matrix<S, 18, 1>;         // 18维向量类型
-    using Mat3T = Eigen::Matrix<S, 3, 3>;           // 3x3矩阵类型
-    using MotionNoiseT = Eigen::Matrix<S, 18, 18>;  // 运动噪声类型
-    using OdomNoiseT = Eigen::Matrix<S, 3, 3>;      // 里程计噪声类型
-    using GnssNoiseT = Eigen::Matrix<S, 6, 6>;      // GNSS噪声类型
-    using Mat18T = Eigen::Matrix<S, 18, 18>;        // 18维方差类型
-    using NavStateT = NavState<S>;                  // 整体名义状态变量类型
+    using SO3 = Sophus::SO3<S>;                     // rotation matrix
+    using VecT = Eigen::Matrix<S, 3, 1>;            // 3d vector type
+    using Vec18T = Eigen::Matrix<S, 18, 1>;         // 18d vector type
+    using Mat3T = Eigen::Matrix<S, 3, 3>;           // 3d matrix type
+    using MotionNoiseT = Eigen::Matrix<S, 18, 18>;  // motion noise type
+    using OdomNoiseT = Eigen::Matrix<S, 3, 3>;      // Odometry noise type
+    // using GnssNoiseT = Eigen::Matrix<S, 6, 6>;      // GNSS噪声类型
+    using Mat18T = Eigen::Matrix<S, 18, 18>;        // 18d matrix type for covariance matrices
+    using NavStateT = NavState<S>;                  // type of the entire nominal state
 
     struct Options {
         Options() = default;
 
-        /// IMU 测量与零偏参数
-        double imu_dt_ = 0.01;  // IMU测量间隔
+        /// IMU measurement and zero bias
+        double imu_dt_ = 0.01;  // IMU dt
         // NOTE IMU噪声项都为离散时间，不需要再乘dt，可以由初始化器指定IMU噪声
         double gyro_var_ = 1e-5;       // 陀螺测量标准差
         double acce_var_ = 1e-2;       // 加计测量标准差
         double bias_gyro_var_ = 1e-6;  // 陀螺零偏游走标准差
         double bias_acce_var_ = 1e-4;  // 加计零偏游走标准差
 
-        /// 里程计参数
+        /// odometry settings
         double odom_var_ = 0.5;
         double odom_span_ = 0.1;        // 里程计测量间隔
         double wheel_radius_ = 0.155;   // 轮子半径
         double circle_pulse_ = 1024.0;  // 编码器每圈脉冲数
 
-        /// RTK 观测参数
-        double gnss_pos_noise_ = 0.1;                   // GNSS位置噪声
-        double gnss_height_noise_ = 0.1;                // GNSS高度噪声
-        double gnss_ang_noise_ = 1.0 * math::kDEG2RAD;  // GNSS旋转噪声
+        // /// RTK 观测参数
+        // double gnss_pos_noise_ = 0.1;                   // GNSS位置噪声
+        // double gnss_height_noise_ = 0.1;                // GNSS高度噪声
+        // double gnss_ang_noise_ = 1.0 * math::kDEG2RAD;  // GNSS旋转噪声
 
         /// 其他配置
         bool update_bias_gyro_ = true;  // 是否更新陀螺bias
@@ -212,8 +212,8 @@ class ESKF {
     Options options_;
 };
 
-using ESKFD = ESKF<double>;
-using ESKFF = ESKF<float>;
+using ESKFD_MACINS = ESKF_MACINS<double>;
+using ESKFF_MACINS = ESKF_MACINS<float>;
 
 template <typename S>
 bool ESKF<S>::Predict(const IMU& imu) {
