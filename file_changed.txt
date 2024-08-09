@@ -1,6 +1,6 @@
-These are the file changed to implement point cloud + imu navigation
+These are the file changed to implement point cloud (MAC algorithm) + imu navigation
 
-./src/ch3/pcins/**
+./src/ch3/macins/**
 ./src/common/io_utils.cc
 ./src/common/io_utils.h
-./src/common/pc.h
+./src/common/mac.h

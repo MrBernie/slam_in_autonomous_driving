@@ -1,6 +1,6 @@
 
 // #include "ch3/eskf.hpp"
-#include "ch3/pcins/eskf_pcins.hpp"
+#include "ch3/macins/eskf_macins.hpp"
 #include "ch3/static_imu_init.h"
 #include "common/io_utils.h"
 #include "tools/ui/pangolin_window.h"
@@ -63,22 +63,22 @@ int main(int argc, char** argv) {
         ui->Init();
     }
 
-    /// 设置各类回调函数
+    /// call back function settings
     // bool first_gnss_set = false;
     Vec3d origin = Vec3d::Zero();
 
     io.SetIMUProcessFunc([&](const sad::IMU& imu) {
-          /// IMU 处理函数
+          /// IMU handling
           if (!imu_init.InitSuccess()) {
               imu_init.AddIMU(imu);
               return;
           }
 
-          /// 需要IMU初始化
+          /// need IMU initialization
           if (!imu_inited) {
-              // 读取初始零偏，设置ESKF
+              // get the zero bias and set the ESKF
               sad::ESKFD::Options options;
-              // 噪声由初始化器估计
+              // estimate the noise using initializer
               options.gyro_var_ = sqrt(imu_init.GetCovGyro()[0]);
               options.acce_var_ = sqrt(imu_init.GetCovAcce()[0]);
               eskf.SetInitialConditions(options, imu_init.GetInitBg(), imu_init.GetInitBa(), imu_init.GetGravity());
@@ -91,40 +91,35 @@ int main(int argc, char** argv) {
               return;
           }
 
-          /// GNSS 也接收到之后，再开始进行预测
+          /// after we get the data from mac, we can start predicting
           eskf.Predict(imu);
 
-          /// predict就会更新ESKF，所以此时就可以发送数据
+          /// prediction updates ESKF, we can get a nomimal state
           auto state = eskf.GetNominalState();
           if (ui) {
               ui->UpdateNavState(state);
           }
 
-          /// 记录数据以供绘图
+          /// save the result for map plotting
           save_result(fout, state);
 
           usleep(1e3);
       })
-        // .SetGNSSProcessFunc([&](const sad::GNSS& gnss) {
-        //     /// GNSS 处理函数
+        // .SetMACProcessFunc([&](const sad::MAC& mac) {
+        //     /// PointCloud (MAC algorithm) handling function
         //     if (!imu_inited) {
         //         return;
         //     }
 
-        //     sad::GNSS gnss_convert = gnss;
-        //     if (!sad::ConvertGps2UTM(gnss_convert, antenna_pos, FLAGS_antenna_angle) || !gnss_convert.heading_valid_) {
+        //     if (!mac_inited) {
+        //         // set the initialization point
+        //         eskf.SetInitialPosition(mac);
+        //         mac_inited = true;
         //         return;
         //     }
 
-        //     /// 去掉原点
-        //     if (!first_gnss_set) {
-        //         origin = gnss_convert.utm_pose_.translation();
-        //         first_gnss_set = true;
-        //     }
-        //     gnss_convert.utm_pose_.translation() -= origin;
-
-        //     // 要求RTK heading有效，才能合入ESKF
-        //     eskf.ObserveGps(gnss_convert);
+        //     // Observe Point Cloud
+        //     eskf.ObservePointCloud(mac);
 
         //     auto state = eskf.GetNominalState();
         //     if (ui) {
@@ -132,36 +127,12 @@ int main(int argc, char** argv) {
         //     }
         //     save_result(fout, state);
 
-        //     gnss_inited = true;
+        //     usleep(1e3);
         // })
-        .SetMACProcessFunc([&](const sad::MAC& mac) {
-            /// PointCloud handling function
-            if (!imu_inited) {
-                return;
-            }
-
-            if (!mac_inited) {
-                // set the initialization point
-                eskf.SetInitialPosition(mac);
-                mac_inited = true;
-                return;
-            }
-
-            // Observe Point Cloud
-            eskf.ObservePointCloud(mac);
-
-            auto state = eskf.GetNominalState();
-            if (ui) {
-                ui->UpdateNavState(state);
-            }
-            save_result(fout, state);
-
-            usleep(1e3);
-        })
         .SetOdomProcessFunc([&](const sad::Odom& odom) {
             /// Odom 处理函数，本章Odom只给初始化使用
             imu_init.AddOdom(odom);
-            if (FLAGS_with_odom && imu_inited && gnss_inited) {
+            if (FLAGS_with_odom && imu_inited && mac_inited) {
                 eskf.ObserveWheelSpeed(odom);
             }
         })

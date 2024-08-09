@@ -12,8 +12,8 @@ target_link_libraries(run_eskf_gins
         )
 
 # For the point cloud and imu integration
-add_executable(run_eskf_pcins pcins/run_eskf_pcins.cc)
-target_link_libraries(run_eskf_pcins
+add_executable(run_eskf_macins macins/run_eskf_macins.cc)
+target_link_libraries(run_eskf_macins
         glog gflags ${PROJECT_NAME}.common ${PROJECT_NAME}.ch3
         )
 
