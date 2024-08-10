@@ -12,11 +12,12 @@ struct MAC {
         unix_time_ = unix_time;
         Eigen::Matrix4d T_ = Eigen::Matrix4d::Zero();   // transformation matrix converting camera to world
         Eigen::Matrix3d R_ = Eigen::Matrix3d::Zero();   // the rotation matrix in transforamtion matrix
-        // Extract the rotation matrix (first 9 elements)
+
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 4; j++)
             T_(i, j) = transformation_array[i * 4 + j];
         }
+        
         R_ = T_.block<3, 3>(0, 0);
         translation_ = T_.block<3, 1>(0, 3);
         transformation = SE3(R_, translation_);
