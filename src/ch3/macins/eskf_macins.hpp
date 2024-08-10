@@ -61,6 +61,9 @@ class ESKF_MACINS {
         // double gnss_height_noise_ = 0.1;                // GNSS高度噪声
         // double gnss_ang_noise_ = 1.0 * math::kDEG2RAD;  // GNSS旋转噪声
 
+        double mac_pos_noise_ = 0.1;  // MAC position Observation noise
+        double mac_ang_noise_ = 5.0 * math::kDEG2RAD;   // MAC angle Observation noise
+
         /// 其他配置
         bool update_bias_gyro_ = true;  // 是否更新陀螺bias
         bool update_bias_acce_ = true;  // 是否更新加计bias
@@ -69,7 +72,7 @@ class ESKF_MACINS {
     /**
      * 初始零偏取零
      */
-    ESKF(Options option = Options()) : options_(option) { BuildNoise(option); }
+    ESKF_MACINS(Options option = Options()) : options_(option) { BuildNoise(option); }
 
     /**
      * 设置初始条件
@@ -94,8 +97,11 @@ class ESKF_MACINS {
     /// 使用轮速计观测
     bool ObserveWheelSpeed(const Odom& odom);
 
-    /// 使用GPS观测
-    bool ObserveGps(const GNSS& gnss);
+    // Convert the transformation matrix TWC to TWB
+    bool MAC2World(MAC& mac, double camera_angle, Vec3d camera_pos);
+
+    // Use MAC to observe
+    bool ObserveMAC(const MAC& mac);
 
     /**
      * 使用SE3进行观测
@@ -149,11 +155,11 @@ class ESKF_MACINS {
         double o2 = options_.odom_var_ * options_.odom_var_;
         odom_noise_.diagonal() << o2, o2, o2;
 
-        // 设置GNSS状态
-        double gp2 = options.gnss_pos_noise_ * options.gnss_pos_noise_;
-        double gh2 = options.gnss_height_noise_ * options.gnss_height_noise_;
-        double ga2 = options.gnss_ang_noise_ * options.gnss_ang_noise_;
-        gnss_noise_.diagonal() << gp2, gp2, gh2, ga2, ga2, ga2;
+        // // 设置GNSS状态
+        // double gp2 = options.gnss_pos_noise_ * options.gnss_pos_noise_;
+        // double gh2 = options.gnss_height_noise_ * options.gnss_height_noise_;
+        // double ga2 = options.gnss_ang_noise_ * options.gnss_ang_noise_;
+        // gnss_noise_.diagonal() << gp2, gp2, gh2, ga2, ga2, ga2;
     }
 
     /// 更新名义状态变量，重置error state
@@ -203,10 +209,11 @@ class ESKF_MACINS {
     /// 噪声阵
     MotionNoiseT Q_ = MotionNoiseT::Zero();
     OdomNoiseT odom_noise_ = OdomNoiseT::Zero();
-    GnssNoiseT gnss_noise_ = GnssNoiseT::Zero();
+    // GnssNoiseT gnss_noise_ = GnssNoiseT::Zero();
 
     /// 标志位
-    bool first_gnss_ = true;  // 是否为第一个gnss数据
+    // bool first_gnss_ = true;  // 是否为第一个gnss数据
+    bool first_mac_ = true;  // first MAC data
 
     /// 配置项
     Options options_;
@@ -216,18 +223,18 @@ using ESKFD_MACINS = ESKF_MACINS<double>;
 using ESKFF_MACINS = ESKF_MACINS<float>;
 
 template <typename S>
-bool ESKF<S>::Predict(const IMU& imu) {
+bool ESKF_MACINS<S>::Predict(const IMU& imu) {
     assert(imu.timestamp_ >= current_time_);
 
     double dt = imu.timestamp_ - current_time_;
     if (dt > (5 * options_.imu_dt_) || dt < 0) {
-        // 时间间隔不对，可能是第一个IMU数据，没有历史信息
+        // the time interval is too large or negative
         LOG(INFO) << "skip this imu because dt_ = " << dt;
         current_time_ = imu.timestamp_;
         return false;
     }
 
-    // nominal state 递推
+    // nominal state iteration
     VecT new_p = p_ + v_ * dt + 0.5 * (R_ * (imu.acce_ - ba_)) * dt * dt + 0.5 * g_ * dt * dt;
     VecT new_v = v_ + R_ * (imu.acce_ - ba_) * dt + g_ * dt;
     SO3 new_R = R_ * SO3::exp((imu.gyro_ - bg_) * dt);
@@ -256,7 +263,7 @@ bool ESKF<S>::Predict(const IMU& imu) {
 }
 
 template <typename S>
-bool ESKF<S>::ObserveWheelSpeed(const Odom& odom) {
+bool ESKF_MACINS<S>::ObserveWheelSpeed(const Odom& odom) {
     assert(odom.timestamp_ >= current_time_);
     // odom 修正以及雅可比
     // 使用三维的轮速观测，H为3x18，大部分为零
@@ -285,32 +292,47 @@ bool ESKF<S>::ObserveWheelSpeed(const Odom& odom) {
 }
 
 template <typename S>
-bool ESKF<S>::ObserveGps(const GNSS& gnss) {
-    /// GNSS 观测的修正
-    assert(gnss.unix_time_ >= current_time_);
+bool ESKF_MACINS<S>::MAC2World(MAC& mac, double camera_angle, Vec3d camera_pos){
+    /* Same as GNSS, due to the camera offset on the vehicle body, 
+    we need to convert the MAC pose to the body pose.
+    Then, we convert the body pose to the world frame.
+    C : camera frame
+    B : body frame
+    W : world frame
+    TWB = TWC * TCB */ 
 
-    if (first_gnss_) {
-        R_ = gnss.utm_pose_.so3();
-        p_ = gnss.utm_pose_.translation();
-        first_gnss_ = false;
-        current_time_ = gnss.unix_time_;
+    SE3 TBC(SO3::rotZ(camera_angle * math::kDEG2RAD), camera_pos);
+    SE3 TCB = TBC.inverse();
+    SE3 TWC = mac.pose_SE3;
+    SE3 TWB = TWC * TCB;
+    mac.pose_SE3 = TWB;
+    return true;
+}
+
+template <typename S>
+bool ESKF_MACINS<S>::ObserveMAC(const MAC& mac) {
+    assert(mac.unix_time_ >= current_time_);
+
+    if (first_mac_) {
+        R_ = mac.pose_SE3.so3();
+        p_ = mac.pose_SE3.translation();
+        first_mac_ = false;
+        current_time_ = mac.unix_time_;
         return true;
     }
 
-    assert(gnss.heading_valid_);
-    ObserveSE3(gnss.utm_pose_, options_.gnss_pos_noise_, options_.gnss_ang_noise_);
-    current_time_ = gnss.unix_time_;
+    ObserveSE3(mac.pose_SE3, options_.mac_pos_noise_, options_.mac_ang_noise_);
+    current_time_ = mac.unix_time_;
 
     return true;
 }
 
 template <typename S>
-bool ESKF<S>::ObserveSE3(const SE3& pose, double trans_noise, double ang_noise) {
-    /// 既有旋转，也有平移
-    /// 观测状态变量中的p, R，H为6x18，其余为零
+bool ESKF_MACINS<S>::ObserveSE3(const SE3& pose, double trans_noise, double ang_noise) {
+    /// Observed State vector has p, R，H (all are 6x18). The rest of the elements are zero
     Eigen::Matrix<S, 6, 18> H = Eigen::Matrix<S, 6, 18>::Zero();
-    H.template block<3, 3>(0, 0) = Mat3T::Identity();  // P部分
-    H.template block<3, 3>(3, 6) = Mat3T::Identity();  // R部分（3.66)
+    H.template block<3, 3>(0, 0) = Mat3T::Identity();  // P
+    H.template block<3, 3>(3, 6) = Mat3T::Identity();  // R（3.66)
 
     // 卡尔曼增益和更新过程
     Vec6d noise_vec;

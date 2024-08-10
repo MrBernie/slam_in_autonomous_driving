@@ -12,9 +12,16 @@
 #include <iomanip>
 
 DEFINE_string(txt_path, "./data/ch3/macins/macins.txt", "data file path");
-DEFINE_double(antenna_angle, 12.06, "RTK antenna angle）");
-DEFINE_double(antenna_pox_x, -0.17, "RTK antenna offset X");
-DEFINE_double(antenna_pox_y, -0.20, "RTK antenna offset Y");
+// DEFINE_double(antenna_angle, 12.06, "RTK antenna angle）");
+// DEFINE_double(antenna_pox_x, -0.17, "RTK antenna offset X");
+// DEFINE_double(antenna_pox_y, -0.20, "RTK antenna offset Y");
+
+// camera settings
+DEFINE_double(camera_angle, 0.0, "camera angle");
+DEFINE_double(camera_pox_x, 0.0, "camera offset X");
+DEFINE_double(camera_pox_y, 0.0, "camera offset Y");
+DEFINE_double(camera_pox_z, 0.0, "camera offset Z");
+
 DEFINE_bool(with_ui, true, "use UI or not");
 DEFINE_bool(with_odom, false, "use wheel odometry or not");
 
@@ -33,7 +40,7 @@ int main(int argc, char** argv) {
 
     // Initializer
     sad::StaticIMUInit imu_init;  // use the default settings
-    sad::ESKFD eskf;
+    sad::ESKFD_MACINS eskf;
 
     sad::TxtIO io(FLAGS_txt_path);
     // Vec2d antenna_pos(FLAGS_antenna_pox_x, FLAGS_antenna_pox_y);
@@ -65,6 +72,7 @@ int main(int argc, char** argv) {
 
     /// call back function settings
     // bool first_gnss_set = false;
+    bool first_mac_set = false;
     Vec3d origin = Vec3d::Zero();
 
     io.SetIMUProcessFunc([&](const sad::IMU& imu) {
@@ -77,7 +85,7 @@ int main(int argc, char** argv) {
           /// need IMU initialization
           if (!imu_inited) {
               // get the zero bias and set the ESKF
-              sad::ESKFD::Options options;
+              sad::ESKFD_MACINS::Options options;
               // estimate the noise using initializer
               options.gyro_var_ = sqrt(imu_init.GetCovGyro()[0]);
               options.acce_var_ = sqrt(imu_init.GetCovAcce()[0]);
@@ -87,11 +95,11 @@ int main(int argc, char** argv) {
           }
 
           if (!mac_inited) {
-              /// wait for the initialization of mac
+              /// wait for the initialization of MAC
               return;
           }
 
-          /// after we get the data from mac, we can start predicting
+          /// after we get the data from MAC, we can start predicting
           eskf.Predict(imu);
 
           /// prediction updates ESKF, we can get a nomimal state
@@ -105,30 +113,34 @@ int main(int argc, char** argv) {
 
           usleep(1e3);
       })
-        // .SetMACProcessFunc([&](const sad::MAC& mac) {
-        //     /// PointCloud (MAC algorithm) handling function
-        //     if (!imu_inited) {
-        //         return;
-        //     }
+        .SetMACProcessFunc([&](const sad::MAC& mac) {
+            /// PointCloud (MAC algorithm) handling function
+            if (!imu_inited) {
+                return;
+            }
+            //  convert TWC to TWB
+            sad::MAC mac_convert = mac;
+            if(!eskf.MAC2World(mac_convert, FLAGS_camera_angle, Vec3d(FLAGS_camera_pox_x, FLAGS_camera_pox_y, FLAGS_camera_pox_z))) {
+                return;
+            }
+            //  set the origin
+            if (!first_mac_set) {
+                origin = mac_convert.pose_SE3.translation();
+                first_mac_set = true;
+            }
+            mac_convert.pose_SE3.translation() -= origin;
+            //  ESKF Update
 
-        //     if (!mac_inited) {
-        //         // set the initialization point
-        //         eskf.SetInitialPosition(mac);
-        //         mac_inited = true;
-        //         return;
-        //     }
+            eskf.ObserveMAC(mac_convert);
 
-        //     // Observe Point Cloud
-        //     eskf.ObservePointCloud(mac);
+            auto state = eskf.GetNominalState();
+            if (ui) {
+                ui->UpdateNavState(state);
+            }
+            save_result(fout, state);
 
-        //     auto state = eskf.GetNominalState();
-        //     if (ui) {
-        //         ui->UpdateNavState(state);
-        //     }
-        //     save_result(fout, state);
-
-        //     usleep(1e3);
-        // })
+            mac_inited = true;
+        })
         .SetOdomProcessFunc([&](const sad::Odom& odom) {
             /// Odom handling, in this Chapter, odometry is only used for IMU initialization
             imu_init.AddOdom(odom);
