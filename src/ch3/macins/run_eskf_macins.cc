@@ -129,8 +129,8 @@ int main(int argc, char** argv) {
                 first_mac_set = true;
             }
             mac_convert.pose_SE3.translation() -= origin;
+            
             //  ESKF Update
-
             eskf.ObserveMAC(mac_convert);
 
             auto state = eskf.GetNominalState();
