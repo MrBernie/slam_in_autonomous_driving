@@ -93,6 +93,9 @@ cd to the `/slam_in_autonomous_driving` and run
 ./bin/motion
 ```
 
+# MAC algorithm and IMU
+Source code implemented in `./src/ch3/macins/`
+
 
 
 
