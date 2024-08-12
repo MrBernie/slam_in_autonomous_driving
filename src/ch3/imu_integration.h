@@ -22,7 +22,8 @@ class IMUIntegration {
     // 增加imu读数
     void AddIMU(const IMU& imu) {
         double dt = imu.timestamp_ - timestamp_;
-        if (dt > 0 && dt < 0.1) {
+        // if (dt > 0 && dt < 0.1) {
+        if (dt > 0 && dt < 0.50) {
             // 假设IMU时间间隔在0至0.1以内
             p_ = p_ + v_ * dt + 0.5 * gravity_ * dt * dt + 0.5 * (R_ * (imu.acce_ - ba_)) * dt * dt;
             v_ = v_ + R_ * (imu.acce_ - ba_) * dt + gravity_ * dt;
