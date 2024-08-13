@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    sad::StaticIMUInit imu_init;    // for imu init
+
     sad::TxtIO io(FLAGS_imu_txt_path);
 
     // 该实验中，我们假设零偏已知
