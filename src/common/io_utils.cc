@@ -54,8 +54,8 @@ void TxtIO::Go() {
         //     mac_proc_(MAC(time, transformation_m));
         } else if (data_type == "MAC" && mac_proc_){
             double time, px, py, pz, rx, ry, rz;  // a 6d vector containing the position and rotation of the camera
-            // ss >> px >> py >> pz >> rx >> ry >> rz;
-            ss >> py >> pz >> px >> ry >> rz >> rx; //we need to do a coordinate transformation to make sure camera coordinate is the same as IMU.
+            // ss >> time >> px >> py >> pz >> rx >> ry >> rz;
+            ss >> time >> py >> pz >> px >> ry >> rz >> rx; //we need to do a coordinate transformation to ensure camera coordinate is the same as IMU.
             px = -px / 1000.0;  // convert to meters
             py = py / 1000.0;
             pz = -pz / 1000.0;

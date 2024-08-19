@@ -12,6 +12,7 @@
 #include <iomanip>
 
 DEFINE_string(txt_path, "./data/ch3/macins/macins.txt", "data file path");
+DEFINE_string(txt_path_out, "./data/ch3/macins/macins_out.txt", "output data file path");
 // DEFINE_double(antenna_angle, 12.06, "RTK antenna angle）");
 // DEFINE_double(antenna_pox_x, -0.17, "RTK antenna offset X");
 // DEFINE_double(antenna_pox_y, -0.20, "RTK antenna offset Y");
@@ -22,8 +23,9 @@ DEFINE_double(camera_pox_x, 0.0, "camera offset X");
 DEFINE_double(camera_pox_y, 0.0, "camera offset Y");
 DEFINE_double(camera_pox_z, 0.0, "camera offset Z");
 
-DEFINE_bool(imu_initialization, true, "是否进行IMU初始化");
-DEFINE_int32(imu_init_time, 5, "IMU初始化时间");
+DEFINE_bool(imu_initialization, true, "IMU initialization or not");
+DEFINE_int32(imu_init_time, 3, "IMU initialization time");
+DEFINE_double(imu_dt, 0.04, "IMU time interval tolerance");
 
 DEFINE_bool(with_ui, true, "use UI or not");
 DEFINE_bool(with_odom, false, "use wheel odometry or not");
@@ -72,7 +74,7 @@ int main(int argc, char** argv) {
         fout << std::endl;
     };
 
-    std::ofstream fout("./data/ch3/macins/macins_out.txt");
+    std::ofstream fout(FLAGS_txt_path_out);
     bool imu_inited = false, mac_inited = false;
 
     std::shared_ptr<sad::ui::PangolinWindow> ui = nullptr;
@@ -97,6 +99,8 @@ int main(int argc, char** argv) {
           if (!imu_inited) {
               // get the zero bias and set the ESKF
               sad::ESKFD_MACINS::Options options;
+              // we use higher imu dt tolerance
+              options.imu_dt_ = FLAGS_imu_dt;
               // estimate the noise using initializer
               options.gyro_var_ = sqrt(imu_init.GetCovGyro()[0]);
               options.acce_var_ = sqrt(imu_init.GetCovAcce()[0]);
