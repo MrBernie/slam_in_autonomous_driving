@@ -45,13 +45,17 @@ void TxtIO::Go() {
             bool heading_valid;
             ss >> time >> lat >> lon >> alt >> heading >> heading_valid;
             gnss_proc_(GNSS(time, 4, Vec3d(lat, lon, alt), heading, heading_valid));
+        // } else if (data_type == "MAC" && mac_proc_){
+        //     double time, transformation_m[16];  // a transformation matrix in one line (output of MAC algorithm)
+        //     ss >> time;
+        //     for(int i = 0; i < 16; i++){
+        //         ss >> transformation_m[i];
+        //     }
+        //     mac_proc_(MAC(time, transformation_m));
         } else if (data_type == "MAC" && mac_proc_){
-            double time, transformation_m[16];  // a transformation matrix in one line (output of MAC algorithm)
-            ss >> time;
-            for(int i = 0; i < 16; i++){
-                ss >> transformation_m[i];
-            }
-            mac_proc_(MAC(time, transformation_m));
+            double time, px, py, pz, rx, ry, rz;  // a 6d vector containing the position and heading of the camera
+            ss >> px >> py >> pz >> rx >> ry >> rz;
+            mac_proc_(MAC(time, Vec3d(px, py, pz), Vec3d(rx, ry, rz)));
         }
     }
 

@@ -22,6 +22,9 @@ DEFINE_double(camera_pox_x, 0.0, "camera offset X");
 DEFINE_double(camera_pox_y, 0.0, "camera offset Y");
 DEFINE_double(camera_pox_z, 0.0, "camera offset Z");
 
+DEFINE_bool(imu_initialization, true, "是否进行IMU初始化");
+DEFINE_int32(imu_init_time, 5, "IMU初始化时间");
+
 DEFINE_bool(with_ui, true, "use UI or not");
 DEFINE_bool(with_odom, false, "use wheel odometry or not");
 
@@ -39,7 +42,15 @@ int main(int argc, char** argv) {
     }
 
     // Initializer
-    sad::StaticIMUInit imu_init;  // use the default settings
+    // sad::StaticIMUInit imu_init;  // use the default settings
+
+    sad::StaticIMUInit::Options options;
+    if (FLAGS_imu_initialization) {
+        options.use_speed_for_static_checking_ = false;
+        options.init_time_seconds_ = FLAGS_imu_init_time;   // time for static checking
+    }
+    sad::StaticIMUInit imu_init(options);    // for imu init
+
     sad::ESKFD_MACINS eskf;
 
     sad::TxtIO io(FLAGS_txt_path);
