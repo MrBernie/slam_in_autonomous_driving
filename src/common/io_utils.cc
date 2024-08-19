@@ -34,8 +34,8 @@ void TxtIO::Go() {
         if (data_type == "IMU" && imu_proc_) {
             double time, gx, gy, gz, ax, ay, az;
             ss >> time >> gx >> gy >> gz >> ax >> ay >> az;
-            // imu_proc_(IMU(time, Vec3d(gx, gy, gz) * math::kDEG2RAD, Vec3d(ax, ay, az)));
-            imu_proc_(IMU(time, Vec3d(gx, gy, gz), Vec3d(ax, ay, az)));
+            imu_proc_(IMU(time, Vec3d(gx, gy, gz) * math::kDEG2RAD, Vec3d(ax, ay, az)));
+            // imu_proc_(IMU(time, Vec3d(gx, gy, gz), Vec3d(ax, ay, az)));
         } else if (data_type == "ODOM" && odom_proc_) {
             double time, wl, wr;
             ss >> time >> wl >> wr;
@@ -53,8 +53,13 @@ void TxtIO::Go() {
         //     }
         //     mac_proc_(MAC(time, transformation_m));
         } else if (data_type == "MAC" && mac_proc_){
-            double time, px, py, pz, rx, ry, rz;  // a 6d vector containing the position and heading of the camera
-            ss >> px >> py >> pz >> rx >> ry >> rz;
+            double time, px, py, pz, rx, ry, rz;  // a 6d vector containing the position and rotation of the camera
+            // ss >> px >> py >> pz >> rx >> ry >> rz;
+            ss >> py >> pz >> px >> ry >> rz >> rx; //we need to do a coordinate transformation to make sure camera coordinate is the same as IMU.
+            px = -px / 1000.0;  // convert to meters
+            py = py / 1000.0;
+            pz = -pz / 1000.0;
+
             mac_proc_(MAC(time, Vec3d(px, py, pz), Vec3d(rx, ry, rz)));
         }
     }
