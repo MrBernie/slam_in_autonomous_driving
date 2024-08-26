@@ -8,6 +8,7 @@ These are the file changed to implement point cloud (MAC algorithm) + imu naviga
 ./src/ch3/CMakeLists.txt
 ./src/ch3/imu_integration.h
 ./src/ch3/run_imu_integration.cc
+./src/ch3/static_imu_init.cc
 ```
 
 Put the data file in `./data/ch3/macins/`.
