@@ -11,7 +11,7 @@
 #include <fstream>
 #include <iomanip>
 
-DEFINE_string(txt_path, "./data/ch3/macins/macins.txt", "data file path");
+DEFINE_string(txt_path, "./data/ch3/macins/IMU_MAC_data_output2_24_8_13.txt", "data file path");
 DEFINE_string(txt_path_out, "./data/ch3/macins/macins_out.txt", "output data file path");
 // DEFINE_double(antenna_angle, 12.06, "RTK antenna angle）");
 // DEFINE_double(antenna_pox_x, -0.17, "RTK antenna offset X");
@@ -24,7 +24,7 @@ DEFINE_double(camera_pox_y, 0.0, "camera offset Y");
 DEFINE_double(camera_pox_z, 0.0, "camera offset Z");
 
 DEFINE_bool(imu_initialization, true, "IMU initialization or not");
-DEFINE_int32(imu_init_time, 3, "IMU initialization time");
+DEFINE_int32(imu_init_time, 5, "IMU initialization time");
 DEFINE_double(imu_dt, 0.04, "IMU time interval tolerance");
 
 DEFINE_bool(with_ui, true, "use UI or not");
@@ -135,9 +135,9 @@ int main(int argc, char** argv) {
             }
             //  convert TWC to TWB
             sad::MAC mac_convert = mac;
-            if(!eskf.MAC2World(mac_convert, FLAGS_camera_angle, Vec3d(FLAGS_camera_pox_x, FLAGS_camera_pox_y, FLAGS_camera_pox_z))) {
-                return;
-            }
+            // if(!eskf.MAC2World(mac_convert, FLAGS_camera_angle, Vec3d(FLAGS_camera_pox_x, FLAGS_camera_pox_y, FLAGS_camera_pox_z))) {
+            //     return;
+            // }
             //  set the origin
             if (!first_mac_set) {
                 origin = mac_convert.pose_SE3.translation();
@@ -156,13 +156,13 @@ int main(int argc, char** argv) {
 
             mac_inited = true;
         })
-        .SetOdomProcessFunc([&](const sad::Odom& odom) {
-            /// Odom handling, in this Chapter, odometry is only used for IMU initialization
-            imu_init.AddOdom(odom);
-            if (FLAGS_with_odom && imu_inited && mac_inited) {
-                eskf.ObserveWheelSpeed(odom);
-            }
-        })
+        // .SetOdomProcessFunc([&](const sad::Odom& odom) {
+        //     /// Odom handling, in this Chapter, odometry is only used for IMU initialization
+        //     imu_init.AddOdom(odom);
+        //     if (FLAGS_with_odom && imu_inited && mac_inited) {
+        //         eskf.ObserveWheelSpeed(odom);
+        //     }
+        // })
         .Go();
 
     while (ui && !ui->ShouldQuit()) {

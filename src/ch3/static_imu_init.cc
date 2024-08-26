@@ -71,12 +71,17 @@ bool StaticIMUInit::TryInit() {
 
     // 以acce均值为方向，取9.8长度为重力
     LOG(INFO) << "mean acce: " << mean_acce.transpose();
-    gravity_ = -mean_acce / mean_acce.norm() * options_.gravity_norm_;
+    // gravity_ = -mean_acce / mean_acce.norm() * options_.gravity_norm_;
+
+    // gravity_[0] = 0;
+    // gravity_[1] = 0;
 
     // 重新计算加计的协方差
-    math::ComputeMeanAndCovDiag(init_imu_deque_, mean_acce, cov_acce_,
-                                [this](const IMU& imu) { return imu.acce_ + gravity_; });
+    // math::ComputeMeanAndCovDiag(init_imu_deque_, mean_acce, cov_acce_,
+                                // [this](const IMU& imu) { return imu.acce_ + gravity_; });
 
+    // LOG(INFO) << "mean acce: " << mean_acce.transpose();
+    // LOG(INFO) << "gravity: " << gravity_.transpose();
     // 检查IMU噪声
     if (cov_gyro_.norm() > options_.max_static_gyro_var) {
         LOG(ERROR) << "陀螺仪测量噪声太大" << cov_gyro_.norm() << " > " << options_.max_static_gyro_var;
@@ -91,6 +96,7 @@ bool StaticIMUInit::TryInit() {
     // 估计测量噪声和零偏
     init_bg_ = mean_gyro;
     init_ba_ = mean_acce;
+    init_ba_[2] = mean_acce[2] - 9.8;
 
     LOG(INFO) << "IMU 初始化成功，初始化时间= " << current_time_ - init_start_time_ << ", bg = " << init_bg_.transpose()
               << ", ba = " << init_ba_.transpose() << ", gyro sq = " << cov_gyro_.transpose()

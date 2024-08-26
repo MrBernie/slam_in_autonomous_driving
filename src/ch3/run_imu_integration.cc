@@ -11,7 +11,7 @@
 #include "tools/ui/pangolin_window.h"
 
 // DEFINE_string(imu_txt_path, "./data/ch3/10.txt", "数据文件路径");
-DEFINE_string(imu_txt_path, "./data/ch3/macins/IMU_data_25_8_11.txt", "数据文件路径");
+DEFINE_string(imu_txt_path, "./data/ch3/macins/IMU_data_output2_24_8_13.txt", "数据文件路径");
 DEFINE_bool(with_ui, true, "是否显示图形界面");
 DEFINE_bool(imu_initialization, true, "是否进行IMU初始化");
 DEFINE_int32(imu_init_time, 5, "IMU初始化时间");
@@ -65,6 +65,23 @@ int main(int argc, char** argv) {
         fout << std::endl;
     };
 
+    /// 记录结果
+    // auto save_result = [](std::ofstream& fout, double timestamp, const Sophus::SO3d& R, const Vec3d& v,
+    //                       const Vec3d& p, const Vec3d& acce, const Vec3d& gyro) {
+    //     auto save_vec3 = [](std::ofstream& fout, const Vec3d& v) { fout << v[0] << " " << v[1] << " " << v[2] << " "; };
+    //     auto save_quat = [](std::ofstream& fout, const Quatd& q) {
+    //         fout << q.w() << " " << q.x() << " " << q.y() << " " << q.z() << " ";
+    //     };
+
+    //     fout << std::setprecision(18) << timestamp << " " << std::setprecision(9);
+    //     save_vec3(fout, acce);
+    //     save_vec3(fout, gyro);
+    //     save_vec3(fout, p);
+    //     save_quat(fout, R.unit_quaternion());
+    //     save_vec3(fout, v);
+    //     fout << std::endl;
+    // };
+
     std::ofstream fout("./data/ch3/state.txt");
     // io.SetIMUProcessFunc([&imu_integ, &save_result, &fout, &ui](const sad::IMU& imu) {
     io.SetIMUProcessFunc([&](const sad::IMU& imu) {
@@ -90,7 +107,8 @@ int main(int argc, char** argv) {
           }
           
           imu_integ.AddIMU(imu);
-          save_result(fout, imu.timestamp_, imu_integ.GetR(), imu_integ.GetV(), imu_integ.GetP());
+        //   save_result(fout, imu.timestamp_, imu_integ.GetR(), imu_integ.GetV(), imu_integ.GetP(), imu.acce_-imu_init.GetInitBa(), imu.gyro_-imu_init.GetInitBg());
+        save_result(fout, imu.timestamp_, imu_integ.GetR(), imu_integ.GetV(), imu_integ.GetP());
           if (ui) {
               ui->UpdateNavState(imu_integ.GetNavState());
               usleep(1e2);
